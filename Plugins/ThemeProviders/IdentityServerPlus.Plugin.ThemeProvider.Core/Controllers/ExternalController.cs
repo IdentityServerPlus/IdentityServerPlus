@@ -105,18 +105,19 @@ namespace IdentityServerPlus.Plugin.ThemeProvider.Core.Controllers
             }
 
             var info = await _signInManager.GetExternalLoginInfoAsync();
-            
+
 
             // lookup our user and external provider info
-            var (user, authProvider, providerUserId, claims) = await FindUserFromExternalProviderAsync(result);
-            
+            var (user, scheme, authProvider, providerUserId, claims) = await FindUserFromExternalProviderAsync(result);
+
             if (user == null)
             {
                 // TODO: Enable support for custom workflows
-                user = await AutoProvisionUserAsync(authProvider, providerUserId, result);
-            }else
+                user = await AutoProvisionUserAsync(scheme, authProvider, providerUserId, result);
+            }
+            else
             {
-                await authProvider.UpdateUserAsync(user, result);
+                await authProvider.UpdateUserAsync(scheme, user, result);
             }
 
             var additionalLocalClaims = new List<Claim>();
@@ -133,7 +134,7 @@ namespace IdentityServerPlus.Plugin.ThemeProvider.Core.Controllers
 
             var isuser = new IdentityServerUser(user.Id.ToString())
             {
-                IdentityProvider = authProvider.Scheme,
+                IdentityProvider = scheme,
                 AdditionalClaims = additionalLocalClaims
             };
 
@@ -149,8 +150,8 @@ namespace IdentityServerPlus.Plugin.ThemeProvider.Core.Controllers
             var context = await _interaction.GetAuthorizationContextAsync(returnUrl);
 
             await _userManager.UpdateAsync(user);
-            await _events.RaiseAsync(new UserLoginSuccessEvent(authProvider.Scheme, providerUserId, user.Id.ToString(), user.Email, true, context?.ClientId));
-            
+            await _events.RaiseAsync(new UserLoginSuccessEvent(scheme, providerUserId, user.Id.ToString(), user.Email, true, context?.ClientId));
+
 
             if (context != null)
             {
@@ -166,32 +167,32 @@ namespace IdentityServerPlus.Plugin.ThemeProvider.Core.Controllers
             return Redirect(returnUrl);
         }
 
-        private async Task<(ApplicationUser user, IAuthenticationProvider authProvider, string providerUserId, IEnumerable<Claim> claims)> FindUserFromExternalProviderAsync(AuthenticateResult result)
+        private async Task<(ApplicationUser user, string scheme, IAuthenticationProvider authProvider, string providerUserId, IEnumerable<Claim> claims)> FindUserFromExternalProviderAsync(AuthenticateResult result)
         {
             var externalUser = result.Principal;
             var provider = result.Properties.Items["scheme"];
-            var authProvider = _pluginManager.GetProviders<IAuthenticationProvider>().SingleOrDefault(x => x.Scheme == provider);
-            var externalId = authProvider.GetProviderId(result);
+            var authProvider = _pluginManager.GetProviders<IAuthenticationProvider>().SingleOrDefault(x => x.HostsScheme(provider));
+            var externalId = authProvider.GetProviderId(provider, result);
             var user = await _userManager.FindByLoginAsync(provider, externalId);
 
-            return (user, authProvider, externalId, result.Principal.Claims);
+            return (user, provider, authProvider, externalId, result.Principal.Claims);
         }
 
-        private async Task<ApplicationUser> AutoProvisionUserAsync(IAuthenticationProvider authProvider, string providerUserId, AuthenticateResult result)
+        private async Task<ApplicationUser> AutoProvisionUserAsync(string scheme, IAuthenticationProvider authProvider, string providerUserId, AuthenticateResult result)
         {
-            
-            var user = authProvider.ProvisionUser(result);
+
+            var user = authProvider.ProvisionUser(scheme, result);
 
             var identityResult = await _userManager.CreateAsync(user);
 
             if (!identityResult.Succeeded)
-                throw new Exception(identityResult.Errors.First().Description);           
-
-            identityResult = await _userManager.AddLoginAsync(user, new UserLoginInfo(authProvider.Scheme, providerUserId, authProvider.Scheme));
-            if (!identityResult.Succeeded) 
                 throw new Exception(identityResult.Errors.First().Description);
 
-            await authProvider.UpdateUserAsync(user, result);
+            identityResult = await _userManager.AddLoginAsync(user, new UserLoginInfo(scheme, providerUserId, scheme));
+            if (!identityResult.Succeeded)
+                throw new Exception(identityResult.Errors.First().Description);
+
+            await authProvider.UpdateUserAsync(scheme, user, result);
 
             return user;
         }

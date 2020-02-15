@@ -7,6 +7,7 @@ namespace IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft.Models
 {
     public class Provider
     {
+        public string FriendlyName { get; set; }
         public string Scheme { get; set; }
         public string AuthorityTenant { get; set; }
         public string DirectoryTenant { get; set; }
@@ -14,8 +15,10 @@ namespace IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft.Models
         public string ClientSecret { get; set; }
         public List<string> Scopes { get; set; }
         public bool SaveTokens { get; set; }
+        public bool FetchUserInfo { get; set; }
 
         public List<string> AllowedDirectoryIds { get; set; }
+        
     }
 
     public class MicrosoftAuthenticationConfig

@@ -8,7 +8,8 @@
       "ClientSecret": "",
       "Scopes": [],
       "AllowedDirectoryIds": ["*"],
-      "SaveTokens": false
+      "SaveTokens": false,
+      "FetchUserInfo":  false
     }
   ]
 }

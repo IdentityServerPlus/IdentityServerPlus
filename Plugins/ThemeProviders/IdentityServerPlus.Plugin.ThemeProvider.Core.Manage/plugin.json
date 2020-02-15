@@ -1,3 +1,3 @@
 ﻿{
-  "Assemblies": [ "IdentityServerPlus.Plugin.ThemeProvider.Empty.dll"]
+  "Assemblies": [ "IdentityServerPlus.Plugin.ThemeProvider.Core.Manage.dll" ]
 }

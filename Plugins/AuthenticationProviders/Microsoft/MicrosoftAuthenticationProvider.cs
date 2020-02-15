@@ -19,7 +19,7 @@ namespace IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft
         private const string ObjectIdentfier = "http://schemas.microsoft.com/identity/claims/objectidentifier";
         private MicrosoftAuthenticationConfig _config { get; }
 
-        public MicrosoftAuthenticationProvider(MicrosoftAuthenticationConfig configuration) : base("Microsoft", "microsoft")
+        public MicrosoftAuthenticationProvider(MicrosoftAuthenticationConfig configuration)
         {
             _config = configuration;
         }
@@ -63,7 +63,7 @@ namespace IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft
             return builder;
         }
 
-        public override string GetProviderId(AuthenticateResult authResult)
+        public override string GetProviderId(string scheme, AuthenticateResult authResult)
         {
             var claims = authResult.Principal.Claims;
             var id = claims.SingleOrDefault(x => x.Type == ObjectIdentfier);
@@ -72,7 +72,7 @@ namespace IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft
 
 
 
-        public override ApplicationUser ProvisionUser(AuthenticateResult authResult)
+        public override ApplicationUser ProvisionUser(string scheme, AuthenticateResult authResult)
         {
             var claims = authResult.Principal.Claims;
             var email = claims.SingleOrDefault(x => x.Type == JwtClaimTypes.PreferredUserName);
@@ -83,19 +83,38 @@ namespace IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft
                 Username = Guid.NewGuid().ToString(),
                 Claims = new List<ApplicationClaim>()
                 {
-                    new ApplicationClaim(new System.Security.Claims.Claim(JwtClaimTypes.Name, fullName.Value, null, Scheme, Scheme))
+                    new ApplicationClaim(new System.Security.Claims.Claim(JwtClaimTypes.Name, fullName.Value, null, scheme, scheme))
                 }
             };
         }
 
-        public override async Task UpdateUserAsync(ApplicationUser user, AuthenticateResult result)
+        public override async Task UpdateUserAsync(string scheme, ApplicationUser user, AuthenticateResult result)
         {
+            var providerConfig = _config.Providers.SingleOrDefault(x => x.Scheme == scheme);
+            if (providerConfig.SaveTokens)
+            {
+                var provider = user.Providers.SingleOrDefault(x => x.LoginProvider == scheme);
+                if (provider != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(result.Properties.GetTokenValue("access_token")))
+                    {
+                        provider.AccessToken = result.Properties.GetTokenValue("access_token");
 
+                        provider.AccessTokenExpiry = DateTime.Parse(result.Properties.GetTokenValue("expires_at"));
+                    }
+                    if (!string.IsNullOrWhiteSpace(result.Properties.GetTokenValue("id_token")))
+                    {
+                        provider.IdToken = result.Properties.GetTokenValue("id_token");
+                        provider.IdTokenExpiry = DateTime.Parse(result.Properties.GetTokenValue("expires_at"));
+                    }
+                }
+            }
 
+            if(providerConfig.SaveTokens && providerConfig.FetchUserInfo)
             //TODO: Add options for this to happen, and when
             try
             {
-                var graphClient = new GraphServiceClient(new GraphAuthenticationProvider(user.Providers.SingleOrDefault(x => x.LoginProvider == Scheme).AccessToken));
+                var graphClient = new GraphServiceClient(new GraphAuthenticationProvider(user.Providers.SingleOrDefault(x => x.LoginProvider == scheme).AccessToken));
                 var me = await graphClient.Me.Request().GetAsync();
                 user.PhoneNumber = me.MobilePhone;
                 user.PhoneNumberConfirmed = true;
@@ -105,25 +124,17 @@ namespace IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft
             }
             catch (Exception) { }
 
+            await base.UpdateUserAsync(scheme, user, result);
+        }
 
-            var provider = user.Providers.SingleOrDefault(x => x.LoginProvider == Scheme);
-            if (provider != null)
-            {
+        public override string GetFriendlyName(string scheme)
+        {
+            return _config.Providers.Where(x => x.Scheme == scheme).Select(x => x.FriendlyName).FirstOrDefault();
+        }
 
-
-                if (!string.IsNullOrWhiteSpace(result.Properties.GetTokenValue("access_token")))
-                {
-                    provider.AccessToken = result.Properties.GetTokenValue("access_token");
-
-                    provider.AccessTokenExpiry = DateTime.Parse(result.Properties.GetTokenValue("expires_at"));
-                }
-                if (!string.IsNullOrWhiteSpace(result.Properties.GetTokenValue("id_token")))
-                {
-                    provider.IdToken = result.Properties.GetTokenValue("id_token");
-                    provider.IdTokenExpiry = DateTime.Parse(result.Properties.GetTokenValue("expires_at"));
-                }
-            }
-            await base.UpdateUserAsync(user, result);
+        public override bool HostsScheme(string scheme)
+        {
+            return _config.Providers.Any(x => x.Scheme == scheme);
         }
     }
 }
