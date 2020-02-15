@@ -1,5 +1,6 @@
 ﻿using IdentityModel;
 using IdentityServer.Models;
+using IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,39 +17,50 @@ namespace IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft
     internal class MicrosoftAuthenticationProvider : Base.Structures.AuthenticationProvider
     {
         private const string ObjectIdentfier = "http://schemas.microsoft.com/identity/claims/objectidentifier";
-        private IConfiguration Configuration { get; }
+        private MicrosoftAuthenticationConfig _config { get; }
 
-        public MicrosoftAuthenticationProvider(IConfiguration configuration) : base("Microsoft", "microsoft")
+        public MicrosoftAuthenticationProvider(MicrosoftAuthenticationConfig configuration) : base("Microsoft", "microsoft")
         {
-            Configuration = configuration;
+            _config = configuration;
         }
 
         public override string Description => "A login provider for Microft Social and Enterprise (Office 365) Connections";
 
         public override AuthenticationBuilder Build(AuthenticationBuilder builder)
         {
-            return builder.AddOpenIdConnect("microsoft", options =>
-             {
-                 options.SaveTokens = true;
-                 options.Scope.Add("profile");
-                 options.Scope.Add("User.Read");
-                 options.Scope.Add("offline_access");
-                 options.ResponseType = "id_token token";
-                 options.ClientId = Configuration["ClientId"];
-                 options.ClientSecret = Configuration["ClientSecret"];
-                 options.MetadataAddress = "https://login.microsoftonline.com/" + Configuration["TenantId"] + "/v2.0/.well-known/openid-configuration";
-                 options.Authority = "https://login.microsoftonline.com/" + Configuration["TenantId"];
-                 options.TokenValidationParameters = new TokenValidationParameters
-                 {
-                     ValidAudience = Configuration["ClientId"],
-                     IssuerValidator = (issuer, securityToken, validationParameters) =>
-                     {
-                         if (issuer.StartsWith("https://login.microsoftonline.com/") && issuer.EndsWith("/v2.0"))
-                             return issuer;
-                         return null;
-                     }
-                 };
-             });
+
+            foreach (var provider in _config.Providers)
+            {
+                builder = builder.AddOpenIdConnect(provider.Scheme, options =>
+                {
+                    options.SaveTokens = true;
+                    foreach (var scope in provider.Scopes)
+                    {
+                        options.Scope.Add(scope);
+                    }
+                    options.ResponseType = "id_token token";
+                    options.ClientId = provider.ClientId;
+                    options.ClientSecret = provider.ClientSecret;
+                    options.MetadataAddress = "https://login.microsoftonline.com/" + provider.AuthorityTenant + "/v2.0/.well-known/openid-configuration";
+                    options.Authority = "https://login.microsoftonline.com/" + provider.AuthorityTenant;
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidAudience = provider.ClientId,
+                        IssuerValidator = (issuer, securityToken, validationParameters) =>
+                        {
+                            // This is the directory ID of the logged in user
+                            var allowedDirectories = provider.AllowedDirectoryIds;
+                            if (allowedDirectories.Count == 1 && allowedDirectories[0] == "*")
+                            {
+                                if (issuer.StartsWith("https://login.microsoftonline.com/") && issuer.EndsWith("/v2.0"))
+                                    return issuer;
+                            }
+                            return null;
+                        }
+                    };
+                });
+            }
+            return builder;
         }
 
         public override string GetProviderId(AuthenticateResult authResult)

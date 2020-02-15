@@ -129,7 +129,7 @@ namespace IdentityServerPlus.Plugin.DatabaseProvider.MongoDB.Stores
         {
             try
             {
-                var userCached = UserCache.SingleOrDefault(x=> x.Providers.Any(x => x.ProviderKey == providerKey && x.LoginProvider == loginProvider));
+                var userCached = UserCache.SingleOrDefault(x=> x.Providers.Any(p => p.ProviderKey == providerKey && p.LoginProvider == loginProvider));
                 if (userCached != null) return userCached;
 
                 var result = await _users.FindAsync(Builders<TUser>.Filter.ElemMatch(x => x.Providers, c => c.LoginProvider == loginProvider && c.ProviderKey == providerKey));

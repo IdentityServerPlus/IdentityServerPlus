@@ -1,4 +1,5 @@
-﻿using IdentityServerPlus.Plugin.Base;
+﻿using IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft.Models;
+using IdentityServerPlus.Plugin.Base;
 using IdentityServerPlus.Plugin.Base.Interfaces;
 using IdentityServerPlus.Plugin.Base.Models;
 using IdentityServerPlus.Plugin.Base.Structures;
@@ -22,8 +23,10 @@ namespace IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft
 
         public override IEnumerable<ProviderItem> GetProviderTypesAndArguments()
         {
-            yield return new ProviderItem<MicrosoftAuthenticationProvider>(Configuration);
-            yield return new ProviderItem<MicrosoftPartialThemeProvider>();
+            var config = new MicrosoftAuthenticationConfig();
+            Configuration.Bind(config);
+            yield return new ProviderItem<MicrosoftAuthenticationProvider>(config);
+            yield return new ProviderItem<MicrosoftPartialThemeProvider>(config);
         }
     }
 }
