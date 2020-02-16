@@ -1,0 +1,4 @@
+﻿{
+  "ConnectionString": "<how to connect to MongoDB>",
+  "Database":  "<the name of the database>"
+}
