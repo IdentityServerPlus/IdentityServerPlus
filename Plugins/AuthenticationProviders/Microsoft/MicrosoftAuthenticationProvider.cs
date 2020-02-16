@@ -55,7 +55,12 @@ namespace IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft
                                 if (issuer.StartsWith("https://login.microsoftonline.com/") && issuer.EndsWith("/v2.0"))
                                     return issuer;
                             }
-                            return null;
+                            var issuerId = issuer.Replace("https://login.microsoftonline.com/", "").Replace("/v2.0", "");
+                            if (allowedDirectories.Any(x => x.ToLower() == issuerId.ToLower()))
+                            {
+                                return issuer;
+                            }
+                            throw new SecurityTokenInvalidIssuerException("Invalid issuer");
                         }
                     };
                 });
@@ -110,19 +115,19 @@ namespace IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft
                 }
             }
 
-            if(providerConfig.SaveTokens && providerConfig.FetchUserInfo)
-            //TODO: Add options for this to happen, and when
-            try
-            {
-                var graphClient = new GraphServiceClient(new GraphAuthenticationProvider(user.Providers.SingleOrDefault(x => x.LoginProvider == scheme).AccessToken));
-                var me = await graphClient.Me.Request().GetAsync();
-                user.PhoneNumber = me.MobilePhone;
-                user.PhoneNumberConfirmed = true;
+            if (providerConfig.SaveTokens && providerConfig.FetchUserInfo)
+                //TODO: Add options for this to happen, and when
+                try
+                {
+                    var graphClient = new GraphServiceClient(new GraphAuthenticationProvider(user.Providers.SingleOrDefault(x => x.LoginProvider == scheme).AccessToken));
+                    var me = await graphClient.Me.Request().GetAsync();
+                    user.PhoneNumber = me.MobilePhone;
+                    user.PhoneNumberConfirmed = true;
 
-                user.Email = me.UserPrincipalName;
-                user.EmailVerified = true; // we know its confirmed if we got this far from the microsoft account.
-            }
-            catch (Exception) { }
+                    user.Email = me.UserPrincipalName;
+                    user.EmailVerified = true; // we know its confirmed if we got this far from the microsoft account.
+                }
+                catch (Exception) { }
 
             await base.UpdateUserAsync(scheme, user, result);
         }
