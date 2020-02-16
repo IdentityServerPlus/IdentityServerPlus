@@ -10,15 +10,16 @@ namespace IdentityServerPlus.Plugin.Base.Interfaces
 {
     public interface IAuthenticationProvider : IPluginProvider
     {
-        string Scheme { get; }
-        string FriendlyName { get; }
+
+        string GetFriendlyName(string scheme);
+        bool HostsScheme(string scheme);
 
         AuthenticationBuilder Build(AuthenticationBuilder builder);
 
-        string GetProviderId(AuthenticateResult authResult);
+        string GetProviderId(string scheme, AuthenticateResult authResult);
 
-        ApplicationUser ProvisionUser(AuthenticateResult authResult);
-        Task UpdateUserAsync(ApplicationUser user, AuthenticateResult result);
+        ApplicationUser ProvisionUser(string scheme, AuthenticateResult authResult);
+        Task UpdateUserAsync(string scheme, ApplicationUser user, AuthenticateResult result);
 
     }
 }

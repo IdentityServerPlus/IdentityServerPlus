@@ -5,7 +5,7 @@
       "ProviderType": "Files",
       "FileNames": [
         "plugin.settings.json",
-        "plugin.private.settings.json"
+        "plugin.settings.private.json"
       ]
     }
   ]

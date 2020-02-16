@@ -1,3 +1,15 @@
 ﻿{
-  "Assembly": "IdentityServerPlus.Plugin.DatabaseProvider.MongoDB.dll"
+  "Assembly": "IdentityServerPlus.Plugin.DatabaseProvider.MongoDB.dll",
+  "ConfigurationSources": [
+    {
+      "ProviderType": "Files",
+      "FileNames": [
+        "plugin.settings.json",
+      ]
+    },
+    {
+      "ProviderType": "EnvironmentVariables",
+      "Prefix":  "MONGODB_"
+    }
+  ]
 }

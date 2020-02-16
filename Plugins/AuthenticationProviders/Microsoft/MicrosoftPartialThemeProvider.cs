@@ -1,4 +1,5 @@
-﻿using IdentityServerPlus.Plugin.Base.Interfaces;
+﻿using IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft.Models;
+using IdentityServerPlus.Plugin.Base.Interfaces;
 using IdentityServerPlus.Plugin.Base.Structures;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
@@ -12,11 +13,27 @@ namespace IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft
 {
     public class MicrosoftPartialThemeProvider : ThemeProviderBase
     {
+
+        private MicrosoftAuthenticationConfig _config { get; }
         public override string Name => "Microsoft Partial Theme Provider";
 
         public override string Description => "Provides microsoft themed partials for external login";
 
         public override int Index => -1;
 
+        public MicrosoftPartialThemeProvider(MicrosoftAuthenticationConfig config)
+        {
+            _config = config;
+        }
+
+        public override Assembly[] GetViewAssemblies()
+        {
+            var currentAssembly = Assembly.GetAssembly(typeof(MicrosoftPartialThemeProvider));
+            return new[]
+            {
+                Assembly.LoadFrom(Path.Combine(new FileInfo(currentAssembly.Location).DirectoryName, "IdentityServerPlus.Plugin.AuthenticationProvider.Microsoft.Views.dll")),
+                currentAssembly
+        };
+        }
     }
 }

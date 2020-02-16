@@ -1,5 +1,6 @@
 ﻿using IdentityServerPlus.Plugin.Base.Models;
 using IdentityServerPlus.Plugin.Base.Structures;
+using IdentityServerPlus.Plugin.DatabaseProvider.MongoDB.Models;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -14,9 +15,9 @@ namespace IdentityServerPlus.Plugin.DatabaseProvider.MongoDB
 
         public override DateTime LastUpdated => new DateTime(2020, 01, 30);
         private IConfiguration Configuration { get; }
-        public MongoDBDatabaseProviderPlugin() : base("MongoDB Connector", "0.0.0.1")
+        public MongoDBDatabaseProviderPlugin(IConfiguration configuration) : base("MongoDB Connector", "0.0.0.1")
         {
-            Configuration = null;
+            Configuration = configuration;
         }
 
 
@@ -24,7 +25,10 @@ namespace IdentityServerPlus.Plugin.DatabaseProvider.MongoDB
 
         public override IEnumerable<ProviderItem> GetProviderTypesAndArguments()
         {
-            yield return new ProviderItem<MongoDBDatabaseProvider>();
+            var config = new MongoDBConfiguration();
+            Configuration.Bind(config);
+
+            yield return new ProviderItem<MongoDBDatabaseProvider>(config);
         }
     }
 }

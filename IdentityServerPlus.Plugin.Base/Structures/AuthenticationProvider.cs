@@ -8,26 +8,23 @@ namespace IdentityServerPlus.Plugin.Base.Structures
 {
     public abstract class AuthenticationProvider : IAuthenticationProvider
     {
-        public string FriendlyName { get; set; }
 
-        public string Scheme { get; set; }
-
-        public string Name => FriendlyName + " login provider";
+        public string Name => "Microsoft logins provider";
 
         public abstract string Description { get; }
 
-        protected AuthenticationProvider(string friendlyName, string scheme)
-        {
-            this.FriendlyName = friendlyName;
-            this.Scheme = scheme;
-        }
+        protected AuthenticationProvider() { }
 
         public abstract AuthenticationBuilder Build(AuthenticationBuilder builder);
-        public abstract string GetProviderId(AuthenticateResult authResult);
-        public abstract ApplicationUser ProvisionUser(AuthenticateResult result);
-        public virtual Task UpdateUserAsync(ApplicationUser user, AuthenticateResult result)
+        public abstract string GetProviderId(string scheme, AuthenticateResult authResult);
+        public abstract ApplicationUser ProvisionUser(string scheme, AuthenticateResult result);
+        public virtual Task UpdateUserAsync(string scheme, ApplicationUser user, AuthenticateResult result)
         {
             return Task.CompletedTask;
         }
+
+        public abstract string GetFriendlyName(string scheme);
+
+        public abstract bool HostsScheme(string scheme);
     }
 }

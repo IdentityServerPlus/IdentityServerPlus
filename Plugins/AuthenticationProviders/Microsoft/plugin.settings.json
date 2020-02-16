@@ -1,3 +1,15 @@
 ﻿{
-  
+  "Providers": [
+    {
+      "Scheme": "microsoft",
+      "AuthorityTenant": "<tenant id of users (common for all)>",
+      "DirectoryTenant": "<apps tenant id here>",
+      "ClientId": "<client id here>",
+      "ClientSecret": "",
+      "Scopes": [],
+      "AllowedDirectoryIds": ["*"],
+      "SaveTokens": false,
+      "FetchUserInfo":  false
+    }
+  ]
 }

@@ -168,7 +168,7 @@ namespace IdentityServerPlus.Plugin.Base.Services
                 foreach (var provider in plugin.Providers.OfType<IAuthenticationProvider>())
                 {
                     if (provider == null) continue;
-                    _logger.LogTrace("    Building Authentication Provider {0} ({1} - {2})...", provider.Name, provider.FriendlyName, provider.Scheme);
+                    _logger.LogTrace("    Building Authentication Provider {0}...", provider.Name);
                     builder = provider.Build(builder);
                 }
             }

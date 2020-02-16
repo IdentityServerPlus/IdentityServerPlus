@@ -4,6 +4,8 @@
       "commandName": "Project",
       "workingDirectory": "$(TargetDir)",
       "environmentVariables": {
+        "MONGODB_CONNECTIONSTRING": "mongodb://localhost:27017/admin",
+        "MONGODB_DATABASE": "IdentityServer",
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "applicationUrl": "http://localhost:5000"
